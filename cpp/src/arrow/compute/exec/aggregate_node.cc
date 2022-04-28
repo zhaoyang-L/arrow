@@ -358,7 +358,10 @@ class GroupByNode : public ExecNode {
   const char* kind_name() const override { return "GroupByNode"; }
 
   Status Consume(ExecBatch batch) {
-    size_t thread_index = get_thread_index_();
+    // if not using parallel exec, keep using only one thread index
+    bool use_sync_execution = !(plan_->exec_context()->executor());
+    size_t thread_index = use_sync_execution ? 0 : get_thread_index_();
+
     if (thread_index >= local_states_.size()) {
       return Status::IndexError("thread index ", thread_index, " is out of range [0, ",
                                 local_states_.size(), ")");
@@ -514,7 +517,10 @@ class GroupByNode : public ExecNode {
   Status StartProducing() override {
     finished_ = Future<>::Make();
 
-    local_states_.resize(ThreadIndexer::Capacity());
+    // if not using parallel exec, keep using only one state
+    bool use_sync_execution = !(plan_->exec_context()->executor());
+    local_states_.resize(use_sync_execution ? 1 : ThreadIndexer::Capacity());
+
     return Status::OK();
   }
 
@@ -558,7 +564,10 @@ class GroupByNode : public ExecNode {
   };
 
   ThreadLocalState* GetLocalState() {
-    size_t thread_index = get_thread_index_();
+    // if not using parallel exec, keep using only one thread index
+    bool use_sync_execution = !(plan_->exec_context()->executor());
+    size_t thread_index = use_sync_execution ? 0 : get_thread_index_();
+
     return &local_states_[thread_index];
   }
 

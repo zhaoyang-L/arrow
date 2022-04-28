@@ -332,7 +332,7 @@ class HashJoinNode : public ExecNode {
       return;
     }
 
-    // if not using parallel exec, keep using only one thread
+    // if not using parallel exec, keep using only one thread index
     bool use_sync_execution = !(plan_->exec_context()->executor());
     size_t thread_index = use_sync_execution ? 0 : thread_indexer_();
 
@@ -364,7 +364,7 @@ class HashJoinNode : public ExecNode {
   void InputFinished(ExecNode* input, int total_batches) override {
     ARROW_DCHECK(std::find(inputs_.begin(), inputs_.end(), input) != inputs_.end());
 
-    // if not using parallel exec, keep using only one thread
+    // if not using parallel exec, keep using only one thread index
     bool use_sync_execution = !(plan_->exec_context()->executor());
     size_t thread_index = use_sync_execution ? 0 : thread_indexer_();
 
