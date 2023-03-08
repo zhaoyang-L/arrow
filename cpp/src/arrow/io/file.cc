@@ -243,24 +243,24 @@ class ReadableFile::ReadableFileImpl : public OSFile {
   Status Open(const std::string& path) { return OpenReadable(path); }
   Status Open(int fd) { return OpenReadable(fd); }
 
-  Result<std::shared_ptr<Buffer>> ReadBuffer(int64_t nbytes) {
+  Result<std::shared_ptr<Buffer>> ReadBuffer(int64_t nbytes, int64_t* bytes_read) {
     ARROW_ASSIGN_OR_RAISE(auto buffer, AllocateResizableBuffer(nbytes, pool_));
 
-    ARROW_ASSIGN_OR_RAISE(int64_t bytes_read, Read(nbytes, buffer->mutable_data()));
-    if (bytes_read < nbytes) {
-      RETURN_NOT_OK(buffer->Resize(bytes_read));
+    ARROW_ASSIGN_OR_RAISE(*bytes_read, Read(nbytes, buffer->mutable_data()));
+    if (*bytes_read < nbytes) {
+      RETURN_NOT_OK(buffer->Resize(*bytes_read));
       buffer->ZeroPadding();
     }
     return std::move(buffer);
   }
 
-  Result<std::shared_ptr<Buffer>> ReadBufferAt(int64_t position, int64_t nbytes) {
+  Result<std::shared_ptr<Buffer>> ReadBufferAt(
+      int64_t position, int64_t nbytes, int64_t* bytes_read) {
     ARROW_ASSIGN_OR_RAISE(auto buffer, AllocateResizableBuffer(nbytes, pool_));
 
-    ARROW_ASSIGN_OR_RAISE(int64_t bytes_read,
-                          ReadAt(position, nbytes, buffer->mutable_data()));
-    if (bytes_read < nbytes) {
-      RETURN_NOT_OK(buffer->Resize(bytes_read));
+    ARROW_ASSIGN_OR_RAISE(*bytes_read, ReadAt(position, nbytes, buffer->mutable_data()));
+    if (*bytes_read < nbytes) {
+      RETURN_NOT_OK(buffer->Resize(*bytes_read));
       buffer->ZeroPadding();
     }
     return std::move(buffer);
@@ -335,22 +335,38 @@ Status ReadableFile::WillNeed(const std::vector<ReadRange>& ranges) {
   return impl_->WillNeed(ranges);
 }
 
+int64_t ReadableFile::GetBytesRead() const { return bytes_read_; }
+
 Result<int64_t> ReadableFile::DoTell() const { return impl_->Tell(); }
 
 Result<int64_t> ReadableFile::DoRead(int64_t nbytes, void* out) {
-  return impl_->Read(nbytes, out);
+  auto res = impl_->Read(nbytes, out);
+  if (res.ok()) {
+    bytes_read_ += *res;
+  }
+  return res;
 }
 
 Result<int64_t> ReadableFile::DoReadAt(int64_t position, int64_t nbytes, void* out) {
-  return impl_->ReadAt(position, nbytes, out);
+  auto res = impl_->ReadAt(position, nbytes, out);
+  if (res.ok()) {
+    bytes_read_ += *res;
+  }
+  return res;
 }
 
 Result<std::shared_ptr<Buffer>> ReadableFile::DoReadAt(int64_t position, int64_t nbytes) {
-  return impl_->ReadBufferAt(position, nbytes);
+  int64_t bytes_read_this = 0;
+  auto res = impl_->ReadBufferAt(position, nbytes, &bytes_read_this);
+  bytes_read_ += bytes_read_this;
+  return res;
 }
 
 Result<std::shared_ptr<Buffer>> ReadableFile::DoRead(int64_t nbytes) {
-  return impl_->ReadBuffer(nbytes);
+  int64_t bytes_read_this;
+  auto res = impl_->ReadBuffer(nbytes, &bytes_read_this);
+  bytes_read_ += bytes_read_this = 0;
+  return res;
 }
 
 Result<int64_t> ReadableFile::DoGetSize() { return impl_->size(); }
