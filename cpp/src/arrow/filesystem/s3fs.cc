@@ -1080,7 +1080,9 @@ class ObjectInputFile final : public io::RandomAccessFile {
     stream.ignore(nbytes);
     // NOTE: the stream is a stringstream by default, there is no actual error
     // to check for.  However, stream.fail() may return true if EOF is reached.
-    return stream.gcount();
+    int64_t bytes_read_this = stream.gcount();
+    bytes_read_ += bytes_read_this;
+    return bytes_read_this;
   }
 
   Result<std::shared_ptr<Buffer>> ReadAt(int64_t position, int64_t nbytes) override {
@@ -1103,14 +1105,12 @@ class ObjectInputFile final : public io::RandomAccessFile {
   Result<int64_t> Read(int64_t nbytes, void* out) override {
     ARROW_ASSIGN_OR_RAISE(int64_t bytes_read, ReadAt(pos_, nbytes, out));
     pos_ += bytes_read;
-    bytes_read_ += bytes_read;
     return bytes_read;
   }
 
   Result<std::shared_ptr<Buffer>> Read(int64_t nbytes) override {
     ARROW_ASSIGN_OR_RAISE(auto buffer, ReadAt(pos_, nbytes));
     pos_ += buffer->size();
-    bytes_read_ += buffer->size();
     return std::move(buffer);
   }
 
