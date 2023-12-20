@@ -335,8 +335,6 @@ Status ReadableFile::WillNeed(const std::vector<ReadRange>& ranges) {
   return impl_->WillNeed(ranges);
 }
 
-int64_t ReadableFile::GetBytesRead() const { return bytes_read_; }
-
 Result<int64_t> ReadableFile::DoTell() const { return impl_->Tell(); }
 
 Result<int64_t> ReadableFile::DoRead(int64_t nbytes, void* out) {
@@ -363,9 +361,9 @@ Result<std::shared_ptr<Buffer>> ReadableFile::DoReadAt(int64_t position, int64_t
 }
 
 Result<std::shared_ptr<Buffer>> ReadableFile::DoRead(int64_t nbytes) {
-  int64_t bytes_read_this;
+  int64_t bytes_read_this = 0;
   auto res = impl_->ReadBuffer(nbytes, &bytes_read_this);
-  bytes_read_ += bytes_read_this = 0;
+  bytes_read_ += bytes_read_this;
   return res;
 }
 

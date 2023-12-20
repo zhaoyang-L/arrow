@@ -312,8 +312,14 @@ class ARROW_EXPORT RandomAccessFile : public InputStream, public Seekable {
   /// For robust prefetching, use ReadAt() or ReadAsync().
   virtual Status WillNeed(const std::vector<ReadRange>& ranges);
 
+  int64_t GetBytesRead() const;
+
  protected:
   RandomAccessFile();
+
+  /// \brief Record number of bytes read, currently used by FPDB when reading from
+  /// local FS, remote FS and S3 FS.
+  int64_t bytes_read_ = 0;
 
  private:
   struct ARROW_NO_EXPORT Impl;

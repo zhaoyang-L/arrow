@@ -178,6 +178,8 @@ Status RandomAccessFile::WillNeed(const std::vector<ReadRange>& ranges) {
   return Status::OK();
 }
 
+int64_t RandomAccessFile::GetBytesRead() const { return bytes_read_; }
+
 Status Writable::Write(util::string_view data) {
   return Write(data.data(), static_cast<int64_t>(data.size()));
 }

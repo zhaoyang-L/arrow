@@ -1103,12 +1103,14 @@ class ObjectInputFile final : public io::RandomAccessFile {
   Result<int64_t> Read(int64_t nbytes, void* out) override {
     ARROW_ASSIGN_OR_RAISE(int64_t bytes_read, ReadAt(pos_, nbytes, out));
     pos_ += bytes_read;
+    bytes_read_ += bytes_read;
     return bytes_read;
   }
 
   Result<std::shared_ptr<Buffer>> Read(int64_t nbytes) override {
     ARROW_ASSIGN_OR_RAISE(auto buffer, ReadAt(pos_, nbytes));
     pos_ += buffer->size();
+    bytes_read_ += buffer->size();
     return std::move(buffer);
   }
 

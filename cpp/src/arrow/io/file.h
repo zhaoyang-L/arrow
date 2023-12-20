@@ -113,8 +113,6 @@ class ARROW_EXPORT ReadableFile
 
   Status WillNeed(const std::vector<ReadRange>& ranges) override;
 
-  int64_t GetBytesRead() const;
-
  private:
   friend RandomAccessFileConcurrencyWrapper<ReadableFile>;
 
@@ -136,9 +134,6 @@ class ARROW_EXPORT ReadableFile
 
   class ARROW_NO_EXPORT ReadableFileImpl;
   std::unique_ptr<ReadableFileImpl> impl_;
-
-  /// \brief Record number of bytes read
-  int64_t bytes_read_ = 0;
 };
 
 /// \brief A file interface that uses memory-mapped files for memory interactions
