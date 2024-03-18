@@ -4305,6 +4305,11 @@ macro(build_awssdk)
       -DENABLE_CURL_LOGGING=OFF
       "-DCMAKE_INSTALL_PREFIX=${AWSSDK_PREFIX}"
       "-DCMAKE_PREFIX_PATH=${AWSSDK_PREFIX}")
+  if(NOT MSVC)
+    list(APPEND AWSSDK_COMMON_CMAKE_ARGS
+         # Workaround for https://github.com/aws/aws-sdk-cpp/issues/1582
+         "-DCMAKE_CXX_FLAGS=${EP_CXX_FLAGS} -Wno-error=deprecated-declarations")
+  endif()
 
   # provide hint for AWS SDK to link with the already located openssl
   get_filename_component(OPENSSL_ROOT_HINT "${OPENSSL_INCLUDE_DIR}" DIRECTORY)
